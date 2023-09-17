@@ -1,1 +1,1 @@
-g++ main.cpp -o direct
+g++ main.cpp ../header/util.cpp -o direct

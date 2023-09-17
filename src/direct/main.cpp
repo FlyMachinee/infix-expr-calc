@@ -1,50 +1,26 @@
-#include <iostream>
-#include <stack>
-#include <vector>
-#include <string>
-#include <fstream>
-#include <cmath>
-#include <conio.h>
-
 using namespace std;
 
-template <typename T> void show_stack(stack<T> &st, char separator);
-template <typename T> void show_stack_in_graph(stack<T> &st, char separator, int type, char elem, int boundary_len, const string& memo);
+#include "../header/util.h"
 
-void show_str_rpt(string str, int times);
-
-int is_bigger(char op_1, char op_2);
-int get_op_type(char op);
-int is_right_bracket(char bracket);
-char corr_bracket(char right_bracket);
-double calc(double a, double b, const string& oper);
-int get_double_len(double num);
-
-void calc_process(stack<double>& st_num, int& stack_boundary_len, char op);
+int priority_table[8][8] = {
+    {0, 0, 0, 0, 0, 1, 1, 1},
+    {0, 0, 0, 0, 0, 1, 1, 1},
+    {1, 1, 0, 0, 0, 1, 1, 1},
+    {1, 1, 0, 0, 0, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1}
+};
 
 int main(int argc, const char *argv[])
 {
-    // set terminal to code UTF-8
-    system("chcp 65001");
-
-    system("cls");
-
     ifstream input("input.txt");
     string expr;
+    int len;
 
-    // read whole expression, for show purpose
-    input >> expr;
-    int len = expr.length();
-
-    // to reread the expression
-    input.seekg(0);
-
-    // check the validity of the file
-    if (input.peek() != '#')
-    {
-        std::cout << "Input file format error!" << std::endl;
-        return -1;
-    }
+    // get the whole infix expression, and the length of it
+    pre_work(input, expr, len);
 
     // stack for operators
     stack<char> st_op;
@@ -66,8 +42,7 @@ int main(int argc, const char *argv[])
     while (ch = input.peek(), ch != '#')
     // peek the initial character of the term
     {   
-        // show a bunch of '=' for segmentation
-        cout << string(len + 9, '=') << endl;
+        segmentation('=', len + 9);
 
         // show the reading expression 
         cout << "表达式: " << expr << endl;
@@ -113,8 +88,7 @@ int main(int argc, const char *argv[])
             show_stack_in_graph(st_op, ' ', 0, 0, st_op.size() * 2 + 1, "当前符号栈");
             getch();
 
-            // segmentation
-            cout << string(len + 9, '-') << endl;
+            segmentation('-', len + 9);
 
             char op;
             while (op = st_op.top(), st_op.pop(), op != corr_bracket(ch))
@@ -129,8 +103,7 @@ int main(int argc, const char *argv[])
                 calc_process(st_num, stack_boundary_len, op);
                 getch();
 
-                // segmentation
-                cout << string(len + 9, '-') << endl;
+                segmentation('-', len + 9);
             }
             // show the corresponding left bracket, and the progress
             cout << "符号栈中弹出符号：\'" << op << "\'，结束弹栈" << endl;
@@ -152,29 +125,16 @@ int main(int argc, const char *argv[])
             cout << "当前指向：\'" << ch << "\' ——→ 判断为操作符" << endl;
             while (1)
             {
-                if (st_op.empty())
-                // op-stack is empty, push in direct
-                {
-                    // show progress
-                    cout << "符号栈空，直接入栈" << endl;
-
-                    // push
-                    st_op.push(ch);
-
-                    // show current operator stack
-                    show_stack_in_graph(st_op, ' ', 1, 0, st_op.size() * 2 + 1, "当前符号栈");
-
-                    // over
-                    break;
-                }
-                else if (is_bigger(ch, st_op.top()))
-                // the reading character is "bigger" than the top one
+                if (st_op.empty() || is_bigger(ch, st_op.top()))
+                // op-stack is empty, or the reading character is "bigger" than the top one
                 // push in direct
                 {
                     // show progress
-                    cout << "当前操作符\'" << ch << "\'的优先级大于符号栈顶的操作符：\'" << st_op.top() << "\'，将\'" << ch << "\'入栈" << endl;
+                    if (st_op.empty())
+                        cout << "符号栈空，直接入栈" << endl;
+                    else
+                        cout << "当前操作符\'" << ch << "\'的优先级大于符号栈顶的操作符：\'" << st_op.top() << "\'，将\'" << ch << "\'入栈" << endl;
 
-                    // push
                     st_op.push(ch);
 
                     // show current operator stack
@@ -202,21 +162,17 @@ int main(int argc, const char *argv[])
                     calc_process(st_num, stack_boundary_len, temp);
                     getch();
 
-                    // segmentation
-                    cout << string(len + 9, '-') << endl;
-
+                    segmentation('-', len + 9);
                     // pop the op-stack until the the reading character is "bigger" than the top one
                 }
             }
         }
-        // show a bunch of '=' for segmentation
-        cout << string(len + 9, '=') << '\n' << endl;
+        segmentation('=', len + 9, '\n');
         getch();
     }
     input.close();
 
-    // show a bunch of '=' for segmentation
-    cout << string(len + 9, '=') << endl;
+    segmentation('=', len + 9);
     
     if (!st_op.empty())
     // if there are some operators left in the op-stack
@@ -242,208 +198,14 @@ int main(int argc, const char *argv[])
 
             // segmentation
             if (st_op.size() != 0)
-                cout << string(len + 9, '-') << endl;
+                segmentation('-', len + 9);
         }
     }
-
-    // segmentation
-    cout << string(len + 9, '=') << endl;
+    segmentation('=', len + 9);
 
     // show result
     cout << "\n表达式读取完毕，结果为" << st_num.top() << endl;
     getch();
 
     return 0;
-}
-
-// print stack content
-template <typename T> void show_stack(stack<T> &st, char separator)
-{
-    stack<T> temp;
-    while (!st.empty())
-    {
-        temp.push(st.top());
-        st.pop();
-    }
-    while (!temp.empty())
-    {
-        T ch = temp.top();
-        temp.pop();
-        cout << ch << separator;
-        st.push(ch);
-    }
-}
-
-// the memo should be 6 Chinese charactor for formating
-template <typename T> void show_stack_in_graph(stack<T> &st, char separator, int type, char elem, int boundery_len, const string& memo)
-{
-    cout << "            ┌"; show_str_rpt("─", boundery_len), cout << endl;
-    cout << memo << "：│ "; show_stack(st, separator);
-
-    switch (type)
-    {
-    case 0:
-        cout << endl;
-        break;
-    case 1:
-        cout << "  ←——" << endl;
-        break;
-    case 2:
-        cout << "  ——→  \'" << elem << "\'" << endl; 
-        break;
-    }
-    cout << "            └"; show_str_rpt("─", boundery_len), cout << endl;
-}
-
-void show_str_rpt(string str, int times)
-{
-    for (int i = 0; i < times; i++)
-        cout << str;
-}
-
-int is_bigger(char op_1, char op_2)
-{
-    int i = get_op_type(op_1), j = get_op_type(op_2);
-    int arr[8][8] = {
-        {0, 0, 0, 0, 0, 1, 1, 1},
-        {0, 0, 0, 0, 0, 1, 1, 1},
-        {1, 1, 0, 0, 0, 1, 1, 1},
-        {1, 1, 0, 0, 0, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1}
-    };
-    return arr[i][j];
-}
-
-int get_op_type(char op)
-{
-    string str = "+-*/^([{";
-    return str.find(op);
-}
-
-int is_right_bracket(char bracket)
-{
-    return bracket == ')' || bracket == ']' || bracket == '}';
-}
-
-char corr_bracket(char right_bracket)
-{
-    switch (right_bracket)
-    {
-    case ')':
-        return '(';
-    case ']':
-        return '[';
-    case '}':
-        return '{';
-    default:
-        return '\0';
-    }
-}
-
-double calc(double a, double b, const string& oper)
-{
-    if (oper == "+")
-        return a + b;
-    else if (oper == "-")
-        return a - b;
-    else if (oper == "*")
-        return a * b;
-    else if (oper == "/")
-    {
-        if (isinf(a / b))
-            throw "！！！ 除数不能为零 ！！！";
-        else
-            return a / b;
-    }
-    else if (oper == "^")
-    {
-        if (!isnormal(pow(a, b)))
-            throw "！！！ 该乘方无意义 ！！！";
-        else
-            return pow(a, b);
-    }
-    else
-        return 0;
-}
-
-int get_double_len(double num)
-{
-    num = (int)(num * 100000) / 100000.0;
-
-    int len = 0;
-
-    if (num < 0)
-    {
-        ++len;
-        num = -num;
-    }
-    int integer = round(num);
-    
-    do
-    {
-        ++len;
-        integer /= 10;
-    }
-    while (integer > 0);
-    
-    double decimals = num - round(num);
-    decimals = fabs(decimals);
-    if (decimals > 1e-6)
-    {
-        ++len;
-        do
-        {
-            ++len;
-            decimals *= 10;
-            decimals -= round(decimals);
-            decimals = fabs(decimals);
-        }
-        while (decimals > 1e-4);
-    }
-
-    return len;
-}
-
-void calc_process(stack<double>& st_num, int& stack_boundary_len, char op)
-{
-    // get the two op-num out, decrease the stack boundary length, the extra 1 is for the separator ' '
-    double num2 = st_num.top();
-    st_num.pop();
-    stack_boundary_len -= (get_double_len(num2) + 1);
-    double num1 = st_num.top();
-    st_num.pop();
-    stack_boundary_len -= (get_double_len(num1) + 1);
-
-    // show progress
-    cout << "实数栈弹出 " << num2 << " 与 " << num1 << " ，与\'" << op << "\'进行运算" << endl;
-
-    // show current operand stack
-    show_stack_in_graph(st_num, ' ', 0, 0, stack_boundary_len, "当前实数栈");
-
-    // calc the result
-    double res;
-    try
-    {
-        res = calc(num1, num2, string(1, op));
-    }
-    catch (const char* str)
-    // math error
-    {
-        cout << str << endl;
-        getch();
-        exit(-1);
-    }
-
-    // show progress
-    cout << num1 << ' ' << op << ' ' << num2 << " = " << res << "，将 " << res << " 入实数栈" << endl;
-
-    // push the result into the operand stack, increase the stack boundary length
-    st_num.push(res);
-    stack_boundary_len += (get_double_len(res) + 1);
-
-    // show current operand stack
-    show_stack_in_graph(st_num, ' ', 0, 0, stack_boundary_len, "当前实数栈");
 }
