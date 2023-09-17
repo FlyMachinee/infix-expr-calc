@@ -1,3 +1,6 @@
+#ifndef _UTIL_H_INCLUDED_
+#define _UTIL_H_INCLUDED_
+
 #include <iostream>
 #include <stack>
 #include <vector>
@@ -6,16 +9,7 @@
 #include <cmath>
 #include <conio.h>
 
-int priority_table[8][8] = {
-    {0, 0, 0, 0, 0, 1, 1, 1},
-    {0, 0, 0, 0, 0, 1, 1, 1},
-    {1, 1, 0, 0, 0, 1, 1, 1},
-    {1, 1, 0, 0, 0, 1, 1, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1}
-};
+extern int priority_table[8][8];
 
 enum TermType
 {
@@ -92,5 +86,56 @@ void show_stack_in_graph(std::stack<T> &st, char separator, int type, char elem,
         std::cout << "  ——→  \'" << elem << "\'" << std::endl; 
         break;
     }
-    std::cout << "            └"; show_str_rpt("─", boundery_len), std::cout << std::endl;
+    std::cout << "            └"; show_str_rpt("─", boundary_len), std::cout << std::endl;
 }
+
+inline void show_str_rpt(std::string str, int times)
+{
+    for (int i = 0; i < times; i++)
+        std::cout << str;
+}
+
+inline void segmentation(std::string rpt_str, int rpt_cnt, char suffix)
+{
+    show_str_rpt(rpt_str, rpt_cnt);
+    std::cout << suffix << std::endl;
+}
+
+inline void segmentation(char rpt_char, int rpt_cnt, char suffix)
+{
+    std::cout << std::string(rpt_cnt, rpt_char) << suffix << std::endl;
+}
+
+inline int is_bigger(char op_1, char op_2)
+{
+    int i = get_op_type(op_1), j = get_op_type(op_2);
+    return priority_table[i][j];
+}
+
+inline int get_op_type(char op)
+{
+    std::string str = "+-*/^([{";
+    return str.find(op);
+}
+
+inline int is_right_bracket(char bracket)
+{
+    return bracket == ')' || bracket == ']' || bracket == '}';
+}
+
+inline char corr_bracket(char right_bracket)
+{
+    switch (right_bracket)
+    {
+    case ')':
+        return '(';
+    case ']':
+        return '[';
+    case '}':
+        return '{';
+    default:
+        return '\0';
+    }
+}
+
+#endif

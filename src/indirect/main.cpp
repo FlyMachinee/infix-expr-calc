@@ -2,6 +2,17 @@ using namespace std;
 
 #include "../header/util.h"
 
+int priority_table[8][8] = {
+    {0, 0, 0, 0, 0, 1, 1, 1},
+    {0, 0, 0, 0, 0, 1, 1, 1},
+    {1, 1, 0, 0, 0, 1, 1, 1},
+    {1, 1, 0, 0, 0, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1}
+};
+
 int main(int argc, const char *argv[])
 {
     ifstream input("input.txt");
@@ -110,29 +121,16 @@ int main(int argc, const char *argv[])
             cout << "当前指向：\'" << ch << "\' ——→ 判断为操作符" << endl;
             while (1)
             {
-                if (st_op.empty())
-                // op-stack is empty, push in direct
-                {
-                    // show progress
-                    cout << "符号栈空，直接入栈" << endl;
-
-                    // push
-                    st_op.push(ch);
-
-                    // show current operator stack
-                    show_stack_in_graph(st_op, ' ', 1, 0, st_op.size() * 2 + 1, "当前符号栈");
-
-                    // over
-                    break;
-                }
-                else if (is_bigger(ch, st_op.top()))
-                // the reading character is "bigger" than the top one
+                if (st_op.empty() || is_bigger(ch, st_op.top()))
+                // op-stack is empty, or the reading character is "bigger" than the top one
                 // push in direct
                 {
                     // show progress
-                    cout << "当前操作符\'" << ch << "\'的优先级大于符号栈顶的操作符：\'" << st_op.top() << "\'，将\'" << ch << "\'入栈" << endl;
+                    if (st_op.empty())
+                        cout << "符号栈空，直接入栈" << endl;
+                    else
+                        cout << "当前操作符\'" << ch << "\'的优先级大于符号栈顶的操作符：\'" << st_op.top() << "\'，将\'" << ch << "\'入栈" << endl;
 
-                    // push
                     st_op.push(ch);
 
                     // show current operator stack
@@ -206,7 +204,7 @@ int main(int argc, const char *argv[])
             getch();
 
             if (st_op.size() != 0)
-                segmentation('-', len + 9, '\n');
+                segmentation('-', len + 9);
         }
     }
     cout << endl;

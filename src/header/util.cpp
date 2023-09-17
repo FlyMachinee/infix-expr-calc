@@ -37,56 +37,6 @@ void show_suffix_expr(std::string memo, std::vector<Term> &v)
     std::cout << std::endl;
 }
 
-
-inline void show_str_rpt(std::string str, int times)
-{
-    for (int i = 0; i < times; i++)
-        std::cout << str;
-}
-
-inline void segmentation(std::string rpt_str, int rpt_cnt, char suffix)
-{
-    show_str_rpt(rpt_str, rpt_cnt);
-    std::cout << suffix << std::endl;
-}
-
-inline void segmentation(char rpt_char, int rpt_cnt, char suffix)
-{
-    std::cout << std::string(rpt_cnt, rpt_char) << suffix << std::endl;
-}
-
-inline int is_bigger(char op_1, char op_2)
-{
-    int i = get_op_type(op_1), j = get_op_type(op_2);
-    return priority_table[i][j];
-}
-
-inline int get_op_type(char op)
-{
-    std::string str = "+-*/^([{";
-    return str.find(op);
-}
-
-inline int is_right_bracket(char bracket)
-{
-    return bracket == ')' || bracket == ']' || bracket == '}';
-}
-
-inline char corr_bracket(char right_bracket)
-{
-    switch (right_bracket)
-    {
-    case ')':
-        return '(';
-    case ']':
-        return '[';
-    case '}':
-        return '{';
-    default:
-        return '\0';
-    }
-}
-
 double calc(double a, double b, const std::string& oper)
 {
     if (oper == "+")
