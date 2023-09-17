@@ -52,17 +52,19 @@ int main(int argc, const char *argv[])
     // stack for nums
     stack<double> st_num;
 
-    // get the character '#'
+    // discard the character '#'
     input.get();
     
     // start progress : calc the value of the infix expression
     cout << "### 开始计算中缀表达式的值 ###\n" << endl;
 
     char ch;
+
+    // the len of "─" to be illustrated
     int stack_boundary_len = 1;
+
     while (ch = input.peek(), ch != '#')
     // peek the initial character of the term
-
     {   
         // show a bunch of '=' for segmentation
         cout << string(len + 9, '=') << endl;
@@ -141,7 +143,7 @@ int main(int argc, const char *argv[])
         else
         // if the term is a operator
         // i.e. be of "+-*/^([{"
-        // push into the operator stack, obeying the rule "the upper op's prority should be greater than its lower op's"
+        // push into the operator stack, obeying the rule "the upper op's priority should be greater than its lower op's"
         {
             // discard the character
             input.get();
@@ -418,7 +420,7 @@ void calc_process(stack<double>& st_num, int& stack_boundary_len, char op)
     // show progress
     cout << "实数栈弹出 " << num2 << " 与 " << num1 << " ，与\'" << op << "\'进行运算" << endl;
 
-    // show current op-num-stack
+    // show current operand stack
     show_stack_in_graph(st_num, ' ', 0, 0, stack_boundary_len, "当前实数栈");
 
     // calc the result
@@ -438,10 +440,10 @@ void calc_process(stack<double>& st_num, int& stack_boundary_len, char op)
     // show progress
     cout << num1 << ' ' << op << ' ' << num2 << " = " << res << "，将 " << res << " 入实数栈" << endl;
 
-    // push the result into the op-num-stack, increase the stack boundary length
+    // push the result into the operand stack, increase the stack boundary length
     st_num.push(res);
     stack_boundary_len += (get_double_len(res) + 1);
 
-    // show current op-num-stack
+    // show current operand stack
     show_stack_in_graph(st_num, ' ', 0, 0, stack_boundary_len, "当前实数栈");
 }

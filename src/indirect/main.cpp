@@ -8,6 +8,17 @@
 
 using namespace std;
 
+int priority_table[8][8] = {
+    {0, 0, 0, 0, 0, 1, 1, 1},
+    {0, 0, 0, 0, 0, 1, 1, 1},
+    {1, 1, 0, 0, 0, 1, 1, 1},
+    {1, 1, 0, 0, 0, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1},
+    {1, 1, 1, 1, 1, 1, 1, 1}
+};
+
 enum TermType
 {
     NUM = 0,
@@ -23,12 +34,15 @@ public:
     Term(TermType type, char ch) : type(type), str(1, ch) {}
 };
 
-void show_terms(vector<Term> &v);
+void pre_work(ifstream& input, string& expr, int& len);
 
+void show_suffix_expr(string memo, vector<Term> &v);
 template <typename T> void show_stack(stack<T> &st, char separator);
 template <typename T> void show_stack_in_graph(stack<T> &st, char separator, int type, char elem, int boundary_len, const string& memo);
 
 void show_str_rpt(string str, int times);
+void segmentation(string rpt_str, int rpt_cnt, char suffix = '\0');
+void segmentation(char rpt_char, int rpt_cnt, char suffix = '\0');
 
 int is_bigger(char op_1, char op_2);
 int get_op_type(char op);
@@ -36,30 +50,18 @@ int is_right_bracket(char bracket);
 char corr_bracket(char right_bracket);
 double calc(double a, double b, const string& oper);
 int get_double_len(double num);
+int get_suffix_expr_len(vector<Term>& suffix_expr);
+
+void calc_process(stack<double>& st_num, int& stack_boundary_len, char op);
 
 int main(int argc, const char *argv[])
 {
-    // set terminal to code UTF-8
-    system("chcp 65001");
-
-    system("cls");
-
     ifstream input("input.txt");
     string expr;
+    int len;
 
-    // read whole expression, for show purpose
-    input >> expr;
-    int len = expr.length();
-
-    // to reread the expression
-    input.seekg(0);
-
-    // check the validity of the file
-    if (input.peek() != '#')
-    {
-        std::cout << "Input file format error!" << std::endl;
-        return -1;
-    }
+    // get the whole infix expression, and the length of it
+    pre_work(input, expr, len);
 
     // stack for operators
     stack<char> st_op;
@@ -67,7 +69,7 @@ int main(int argc, const char *argv[])
     // vector for suffix expression
     vector<Term> suffix_expr;
 
-    // get the character '#'
+    // discard the character '#'
     input.get();
     
     // start progress 1 : calc out the suffix expression
@@ -76,10 +78,8 @@ int main(int argc, const char *argv[])
     char ch;
     while (ch = input.peek(), ch != '#')
     // peek the initial character of the term
-
     {   
-        // show a bunch of '=' for segmentation
-        cout << string(len + 9, '=') << endl;
+        segmentation('=', len + 9);
 
         // show the reading expression 
         cout << "表达式: " << expr << endl;
@@ -90,7 +90,7 @@ int main(int argc, const char *argv[])
 
         if (isdigit(ch) || ch == '.')
         // if the term is a double
-        // i.e. the term with the beginning charactor of "0123456789."
+        // i.e. the term with the beginning character of "0123456789."
         // should be push back into the suffix expr
         {
             double num;
@@ -101,10 +101,10 @@ int main(int argc, const char *argv[])
             cout << "当前指向：" << num << " ——→ 判断为实数，添加至后缀表达式" << endl;
 
             // push back the term into the suffix expression
-            suffix_expr.push_back(Term(NUM, to_string(num)));
+            suffix_expr.emplace_back(Term(NUM, to_string(num)));
 
             // show current suffix expression
-            cout << "当前后缀表达式："; show_terms(suffix_expr); cout << endl;
+            show_suffix_expr("当前后缀表达式：", suffix_expr);
         }
         else if (is_right_bracket(ch))
         // if the term is a right bracket
@@ -130,17 +130,16 @@ int main(int argc, const char *argv[])
                 cout << "符号栈中弹出符号：\'" << op << "\'，添加至后缀表达式" << endl;
 
                 // push back the popped operator into the suffix expr
-                suffix_expr.push_back(Term(OPERATOR, op));
+                suffix_expr.emplace_back(Term(OPERATOR, op));
 
                 // show current suffix expression
-                cout << "当前后缀表达式："; show_terms(suffix_expr); cout << endl;
+                show_suffix_expr("当前后缀表达式：", suffix_expr);
 
                 // show current operator stack
                 show_stack_in_graph(st_op, ' ', 2, op, st_op.size() * 2 + 1, "当前符号栈");
                 getch();
 
-                // segmentation
-                cout << string(len + 9, '-') << endl;
+                segmentation('-', len + 9);
             }
             // show the corresponding left bracket, and the progress
             cout << "符号栈中弹出符号：\'" << op << "\'，结束弹栈" << endl;
@@ -149,12 +148,12 @@ int main(int argc, const char *argv[])
             show_stack_in_graph(st_op, ' ', 2, op, st_op.size() * 2 + 1, "当前符号栈");
 
             // show current suffix expression
-            cout << "当前后缀表达式："; show_terms(suffix_expr); cout << endl;
+            show_suffix_expr("当前后缀表达式：", suffix_expr);
         }
         else
         // if the term is a operator
         // i.e. be of "+-*/^([{"
-        // push into the operator stack, obeying the rule "the upper op's prority should be greater than its lower op's"
+        // push into the operator stack, obeying the rule "the upper op's priority should be greater than its lower op's"
         {
             // discard the character
             input.get();
@@ -205,10 +204,10 @@ int main(int argc, const char *argv[])
                     cout << "当前操作符\'" << ch << "\'的优先级不大于符号栈顶的操作符：\'" << temp << "\'，符号栈弹栈" << endl;
 
                     // push back the popped operator into the suffix expr
-                    suffix_expr.push_back(Term(OPERATOR, temp));
+                    suffix_expr.emplace_back(Term(OPERATOR, temp));
 
                     // show current suffix expression
-                    cout << "当前后缀表达式："; show_terms(suffix_expr); cout << endl;
+                    show_suffix_expr("当前后缀表达式：", suffix_expr);
 
                     // op-stack pop
                     st_op.pop();
@@ -217,21 +216,17 @@ int main(int argc, const char *argv[])
                     show_stack_in_graph(st_op, ' ', 2, temp, st_op.size() * 2 + 1, "当前符号栈");
                     getch();
 
-                    // segmentation
-                    cout << string(len + 9, '-') << endl;
+                    segmentation('-', len + 9);
 
                     // pop the op-stack until the the reading character is "bigger" than the top one
                 }
             }
         }
-        // show a bunch of '=' for segmentation
-        cout << string(len + 9, '=') << '\n' << endl;
+        segmentation('=', len + 9, '\n');
         getch();
     }
     input.close();
-
-    // show a bunch of '=' for segmentation
-    cout << string(len + 9, '=') << endl;
+    segmentation('=', len + 9);
 
     // show progress
     cout << "表达式读取完毕" << endl;
@@ -241,7 +236,7 @@ int main(int argc, const char *argv[])
     {
         // show progress
         cout << "符号栈有剩余操作符，弹栈直到空栈" << endl;
-
+        
         while (!st_op.empty())
         // while there are some operators left in the op-stack
         {
@@ -256,24 +251,22 @@ int main(int argc, const char *argv[])
             cout << "弹出操作符\'" << temp << "\'，添加至后缀表达式" << endl;
 
             // push back the popped operator into the suffix expr
-            suffix_expr.push_back(Term(OPERATOR, temp));
+            suffix_expr.emplace_back(Term(OPERATOR, temp));
 
             // show current suffix expression
-            cout << "当前后缀表达式："; show_terms(suffix_expr); cout << endl;
+            show_suffix_expr("当前后缀表达式：", suffix_expr);
             getch();
 
-            // segmentation
             if (st_op.size() != 0)
-                cout << string(len + 9, '-') << endl;
+                segmentation('-', len + 9, '\n');
         }
     }
     cout << endl;
 
     // show final suffix expression
-    cout << "得到最终后缀表达式："; show_terms(suffix_expr); cout << endl;
+    show_suffix_expr("得到最终后缀表达式：", suffix_expr);
 
-    // segmentation
-    cout << string(len + 9, '=') << endl;
+    segmentation('=', len + 9);
     getch();
 
     //==============================================================================
@@ -285,34 +278,27 @@ int main(int argc, const char *argv[])
     stack<double> st_num;
 
     // calc the title len (just for aesthetics)
-    int title_len = 0;
-    for (int i = 0; i < suffix_expr.size(); i++)
-    {
-        Term &temp = suffix_expr.at(i);
-        if (temp.type == NUM)
-            title_len += get_double_len(stod(temp.str));
-        else
-            title_len += 1;
-    }
-    title_len += suffix_expr.size();
+    int title_len = get_suffix_expr_len(suffix_expr);
 
-    // show title
-    cout << string(title_len + 12, '=') << endl;
+    // show title, 12 is the len of "后缀表达式："
+    segmentation('=', title_len + 12);
 
     int arrow_index = 12;
+
+    // the len of "─" to be illustrated
     int stack_boundary_len = 1;
 
-    for (int i = 0; i < suffix_expr.size(); i++)
+    for (int i = 0; i < suffix_expr.size(); ++i)
     {
         // show suffix expression
-        cout << "后缀表达式："; show_terms(suffix_expr); cout << endl;
+        show_suffix_expr("后缀表达式：", suffix_expr);
 
         // show arrow pointing to the term being read
         cout << string(arrow_index, ' ') << "↑" << endl;
 
         Term& now_term = suffix_expr.at(i);
         if (now_term.type == NUM)
-        // the term is a double (op-num)
+        // the term is a double (operand)
         {
             // get the double value
             double temp = stod(now_term.str);
@@ -320,16 +306,16 @@ int main(int argc, const char *argv[])
             // show progress
             cout << "当前指向：" << temp << " ——→ 判断为实数，入栈" << endl;
 
-            // push into the op-num-stack
+            // push into the operand stack
             st_num.push(temp);
 
             // increase the stack boundary length, the extra 1 is for the separator ' '
             stack_boundary_len += (get_double_len(temp) + 1);
 
-            // show current op-num-stack
+            // show current operand stack
             show_stack_in_graph(st_num, ' ', 0, 0, stack_boundary_len, "当前实数栈");
 
-            // increase the arrow index, let the arrow point to the next term, the extra 1 is for the separator ' '
+            // increase the arrow index, let the arrow point to the next term, the extra 1 is for the separator ' '(space)
             arrow_index += (get_double_len(temp) + 1);
         }
         else
@@ -338,58 +324,21 @@ int main(int argc, const char *argv[])
             // show progress
             cout << "当前指向：\'" << now_term.str << "\' ——→ 判断为操作符，计算" << endl;
 
-            // get the two op-num out, decrease the stack boundary length, the extra 1 is for the separator ' '
-            double num2 = st_num.top();
-            st_num.pop();
-            stack_boundary_len -= (get_double_len(num2) + 1);
-            double num1 = st_num.top();
-            st_num.pop();
-            stack_boundary_len -= (get_double_len(num1) + 1);
-
-            // show progress
-            cout << "实数栈弹出 " << num2 << " 与 " << num1 << " ，与\'" << now_term.str << "\'进行运算" << endl;
-
-            // show current op-num-stack
-            show_stack_in_graph(st_num, ' ', 0, 0, stack_boundary_len, "当前实数栈");
-
-            // calc the result
-            double res;
-            try
-            {
-                res = calc(num1, num2, now_term.str);
-            }
-            catch (const char* str)
-            // math error
-            {
-                cout << str << endl;
-                getch();
-                return -1;
-            }
-
-            // show progress
-            cout << num1 << ' ' << now_term.str << ' ' << num2 << " = " << res << "，将 " << res << " 入栈" << endl;
-
-            // push the result into the op-num-stack, increase the stack boundary length
-            st_num.push(res);
-            stack_boundary_len += (get_double_len(res) + 1);
-
-            // show current op-num-stack
-            show_stack_in_graph(st_num, ' ', 0, 0, stack_boundary_len, "当前实数栈");
+            calc_process(st_num, stack_boundary_len, now_term.str[0]);
 
             // increase the arrow index, let the arrow point to the next term
-            // for 2, one is for the operator, the other one is for separator ' '
+            // for 2, one is for the operator, the other one is for separator ' '(space)
             arrow_index += 2;
         }
 
         if (i != suffix_expr.size() - 1)
         // if it is not the last term
             // print the segmentation
-            cout << string(title_len + 12, '-') << endl;
+            segmentation('-', title_len + 12);
 
         getch();
     }
-    // segmentation
-    cout << string(title_len + 12, '=') << '\n' << endl;
+    segmentation('=', title_len + 12, '\n');
 
     // show final result
     cout << "表达式值为：" << st_num.top() << endl;
@@ -398,9 +347,33 @@ int main(int argc, const char *argv[])
     return 0;
 }
 
-// print terms in vectors
-void show_terms(vector<Term> &v)
+void pre_work(ifstream& input, string& expr, int& len)
 {
+    // set terminal to code UTF-8
+    system("chcp 65001");
+
+    system("cls");
+
+    // check the validity of the file
+    if (input.peek() != '#')
+    {
+        std::cout << "Input file format error!" << std::endl;
+        getch();
+        exit(-1);
+    }
+
+    // read whole expression, for show purpose
+    input >> expr;
+    len = expr.length();
+
+    // set the file reading pointer to the beginning of the file
+    input.seekg(0);
+}
+
+// print terms in suffix_expr
+void show_suffix_expr(string memo, vector<Term> &v)
+{
+    cout << memo;
     for (auto term: v)
     {
         if (term.type == 0)
@@ -408,6 +381,7 @@ void show_terms(vector<Term> &v)
         else
             cout << term.str << ' ';
     }
+    cout << endl;
 }
 
 // print stack content
@@ -449,40 +423,41 @@ template <typename T> void show_stack_in_graph(stack<T> &st, char separator, int
     cout << "            └"; show_str_rpt("─", boundery_len), cout << endl;
 }
 
-void show_str_rpt(string str, int times)
+inline void show_str_rpt(string str, int times)
 {
     for (int i = 0; i < times; i++)
         cout << str;
 }
 
-int is_bigger(char op_1, char op_2)
+inline void segmentation(string rpt_str, int rpt_cnt, char suffix)
 {
-    int i = get_op_type(op_1), j = get_op_type(op_2);
-    int arr[8][8] = {
-        {0, 0, 0, 0, 0, 1, 1, 1},
-        {0, 0, 0, 0, 0, 1, 1, 1},
-        {1, 1, 0, 0, 0, 1, 1, 1},
-        {1, 1, 0, 0, 0, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1},
-        {1, 1, 1, 1, 1, 1, 1, 1}
-    };
-    return arr[i][j];
+    show_str_rpt(rpt_str, rpt_cnt);
+    cout << suffix << endl;
 }
 
-int get_op_type(char op)
+inline void segmentation(char rpt_char, int rpt_cnt, char suffix)
+{
+    cout << string(rpt_cnt, rpt_char) << suffix << endl;
+}
+
+inline int is_bigger(char op_1, char op_2)
+{
+    int i = get_op_type(op_1), j = get_op_type(op_2);
+    return priority_table[i][j];
+}
+
+inline int get_op_type(char op)
 {
     string str = "+-*/^([{";
     return str.find(op);
 }
 
-int is_right_bracket(char bracket)
+inline int is_right_bracket(char bracket)
 {
     return bracket == ')' || bracket == ']' || bracket == '}';
 }
 
-char corr_bracket(char right_bracket)
+inline char corr_bracket(char right_bracket)
 {
     switch (right_bracket)
     {
@@ -559,4 +534,60 @@ int get_double_len(double num)
     }
 
     return len;
+}
+
+int get_suffix_expr_len(vector<Term>& suffix_expr)
+{
+    int len = 0;
+    for (int i = 0; i < suffix_expr.size(); i++)
+    {
+        Term &temp = suffix_expr.at(i);
+        if (temp.type == NUM)
+            len += get_double_len(stod(temp.str));
+        else // temp.type == OPERATOR
+            len += 1;
+    }
+    len += suffix_expr.size();
+    return len;
+}
+
+void calc_process(stack<double>& st_num, int& stack_boundary_len, char op)
+{
+    // get the two op-num out, decrease the stack boundary length, the extra 1 is for the separator ' '
+    double num2 = st_num.top();
+    st_num.pop();
+    stack_boundary_len -= (get_double_len(num2) + 1);
+    double num1 = st_num.top();
+    st_num.pop();
+    stack_boundary_len -= (get_double_len(num1) + 1);
+
+    // show progress
+    cout << "实数栈弹出 " << num2 << " 与 " << num1 << " ，与\'" << op << "\'进行运算" << endl;
+
+    // show current operand stack
+    show_stack_in_graph(st_num, ' ', 0, 0, stack_boundary_len, "当前实数栈");
+
+    // calc the result
+    double res;
+    try
+    {
+        res = calc(num1, num2, string(1, op));
+    }
+    catch (const char* str)
+    // math error
+    {
+        cout << str << endl;
+        getch();
+        exit(-1);
+    }
+
+    // show progress
+    cout << num1 << ' ' << op << ' ' << num2 << " = " << res << "，将 " << res << " 入实数栈" << endl;
+
+    // push the result into the operand stack, increase the stack boundary length
+    st_num.push(res);
+    stack_boundary_len += (get_double_len(res) + 1);
+
+    // show current operand stack
+    show_stack_in_graph(st_num, ' ', 0, 0, stack_boundary_len, "当前实数栈");
 }
