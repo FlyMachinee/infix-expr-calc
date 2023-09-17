@@ -6,7 +6,7 @@
 ## 特性 Feature
 
 - 可进行合法的普通中缀表达式的求解
-  </br>合法的表达式例： `#1.1^4.5-14.*(.1919+1.80)#`
+  </br>合法的表达式例： `#1.1^4.5-14.*(.1919+8.10)#`
 - 未对表达式括号的合法性进行检查
 - 支持 `+ - * / ^` 运算，支持 `() [] {}` 三种括号，三种括号没有使用限制
 - 有两个版本，直接计算版 与 间接计算版（先计算后缀表达式）
@@ -16,7 +16,7 @@
 </br>
 
 - Can calculate valid infix expression
-  </br>e.g.  `#1.1^4.5-14.*(.1919+1.80)#`
+  </br>e.g.  `#1.1^4.5-14.*(.1919+8.10)#`
 - DO NOT check the validity of brackets 
 - Support `+ - * / ^` operators, `() [] {}` brackets, no limitation for bracket usage
 - Two version, one for calc directly, the other one for calc indirectly (transformed into suffix expression first, then calc)
