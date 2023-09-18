@@ -15,7 +15,7 @@ int priority_table[8][8] = {
 
 int main(int argc, const char *argv[])
 {
-    ifstream input("input.txt");
+    ifstream input("input.txt", ios::binary);
     string expr;
     int len;
 
@@ -48,8 +48,7 @@ int main(int argc, const char *argv[])
         cout << "表达式: " << expr << endl;
 
         // show the arrow "↑" pointing to the term which is being reading
-        // XXX: Unpredicted value plus behind the tellg() to make the arrow pointing correctly
-        cout << string((int)input.tellg() + 5, ' ') << "↑" << endl;
+        cout << string((int)input.tellg() + 8, ' ') << "↑" << endl;
 
         if (isdigit(ch) || ch == '.')
         // if the term is a double
